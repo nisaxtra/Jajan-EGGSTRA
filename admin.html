@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin - EGGSTRA</title>
+<style>
+  :root {
+    --amber: #b5701a;
+    --amber-light: #fdf3e3;
+    --amber-border: #eecf9a;
+    --text: #3d3226;
+    --text-muted: #7a6f5f;
+    --green: #2f7d4f;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    background: #faf7f0;
+    color: var(--text);
+    margin: 0;
+    padding: 0 0 60px;
+  }
+  header {
+    background: var(--amber-light);
+    padding: 24px 20px;
+    text-align: center;
+    border-bottom: 1px solid var(--amber-border);
+  }
+  header h1 { margin: 0; font-size: 22px; }
+  main { max-width: 480px; margin: 0 auto; padding: 20px 16px; }
+  .card {
+    background: #fff; border: 1px solid #eee2cf; border-radius: 14px;
+    padding: 16px; margin-bottom: 14px;
+  }
+  label { display: block; font-size: 13px; color: var(--text-muted); margin: 10px 0 5px; }
+  input[type=text], input[type=number], input[type=password] {
+    width: 100%; padding: 11px 13px; font-size: 15px;
+    border: 1px solid #ddd; border-radius: 10px;
+  }
+  .btn {
+    width: 100%; padding: 13px; margin-top: 14px;
+    background: var(--amber); color: #fff; border: none;
+    border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer;
+  }
+  .btn-secondary { background: #fff; color: var(--amber); border: 1px solid var(--amber); }
+  .produk-item { border-bottom: 1px solid #f0e8d8; padding: 12px 0; }
+  .produk-item:last-child { border-bottom: none; }
+  .produk-item .nama { font-weight: 600; font-size: 15px; margin-bottom: 8px; }
+  .row2 { display: flex; gap: 8px; }
+  .row2 > div { flex: 1; }
+  .aktif-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 14px; }
+  .save-row { text-align: right; margin-top: 8px; }
+  .save-row button {
+    padding: 8px 16px; background: var(--green); color: #fff; border: none;
+    border-radius: 8px; font-size: 13px; cursor: pointer;
+  }
+  .empty { color: var(--text-muted); text-align: center; padding: 20px; }
+  h3 { font-size: 15px; margin: 0 0 10px; }
+</style>
+</head>
+<body>
+
+<header><h1>Panel admin EGGSTRA</h1></header>
+
+<main>
+  <div id="login-section" class="card">
+    <label for="password">Kata sandi admin</label>
+    <input type="password" id="password" placeholder="Masukkan kata sandi">
+    <button class="btn" onclick="login()">Masuk</button>
+  </div>
+
+  <div id="admin-section" style="display:none;">
+
+    <div class="card">
+      <h3>Tambah produk baru</h3>
+      <label for="new-nama">Nama produk</label>
+      <input type="text" id="new-nama" placeholder="Contoh: Minyak Goreng">
+      <div class="row2">
+        <div>
+          <label for="new-harga">Harga (Rp)</label>
+          <input type="number" id="new-harga" placeholder="20000">
+        </div>
+        <div>
+          <label for="new-satuan">Satuan</label>
+          <input type="text" id="new-satuan" placeholder="liter / kg / pcs">
+        </div>
+      </div>
+      <label for="new-stok">Stok</label>
+      <input type="number" id="new-stok" placeholder="10">
+      <button class="btn" onclick="tambahProduk()">Tambah produk</button>
+    </div>
+
+    <div class="card">
+      <h3>Produk saat ini</h3>
+      <div id="daftar-produk"><div class="empty">Memuat...</div></div>
+      <button class="btn btn-secondary" onclick="muatProduk()">Muat ulang daftar</button>
+    </div>
+
+  </div>
+</main>
+
+<script>
+const API_URL = "https://script.google.com/macros/s/AKfycbyEi_QC10g-LSxQXcV4X4iZjTvMOu70Tz6BdQ3g9kND1ZohSJz62uCJJ0JVm0aBHB_aTw/exec";
+let PASSWORD = "";
+
+function login() {
+  const pw = document.getElementById("password").value;
+  if (!pw) { alert("Masukkan kata sandi dulu."); return; }
+  PASSWORD = pw;
+  document.getElementById("login-section").style.display = "none";
+  document.getElementById("admin-section").style.display = "block";
+  muatProduk();
+}
+
+async function tambahProduk() {
+  const nama = document.getElementById("new-nama").value.trim();
+  const harga = document.getElementById("new-harga").value;
+  const satuan = document.getElementById("new-satuan").value.trim();
+  const stok = document.getElementById("new-stok").value;
+
+  if (!nama || !harga || !satuan) {
+    alert("Isi nama, harga, dan satuan dulu ya.");
+    return;
+  }
+
+  const res = await fetch(API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain" },
+    body: JSON.stringify({ action: "adminAddProduct", password: PASSWORD, nama, harga, satuan, stok: stok || 0 })
+  });
+  const data = await res.json();
+
+  if (data.error) {
+    alert(data.error === "Kata sandi salah" ? "Kata sandi salah, coba masuk ulang." : data.error);
+    return;
+  }
+
+  document.getElementById("new-nama").value = "";
+  document.getElementById("new-harga").value = "";
+  document.getElementById("new-satuan").value = "";
+  document.getElementById("new-stok").value = "";
+  muatProduk();
+}
+
+async function muatProduk() {
+  const daftar = document.getElementById("daftar-produk");
+  daftar.innerHTML = '<div class="empty">Memuat...</div>';
+
+  const res = await fetch(API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain" },
+    body: JSON.stringify({ action: "adminGetProducts", password: PASSWORD })
+  });
+  const data = await res.json();
+
+  if (data.error) {
+    daftar.innerHTML = `<div class="empty">${data.error}</div>`;
+    return;
+  }
+
+  if (data.produk.length === 0) {
+    daftar.innerHTML = '<div class="empty">Belum ada produk.</div>';
+    return;
+  }
+
+  daftar.innerHTML = "";
+  data.produk.forEach(p => {
+    const div = document.createElement("div");
+    div.className = "produk-item";
+    div.innerHTML = `
+      <div class="nama">${p.nama}</div>
+      <div class="row2">
+        <div>
+          <label>Harga (Rp)</label>
+          <input type="number" id="harga-${p.id}" value="${p.harga}">
+        </div>
+        <div>
+          <label>Stok</label>
+          <input type="number" id="stok-${p.id}" value="${p.stok}">
+        </div>
+      </div>
+      <label>Satuan</label>
+      <input type="text" id="satuan-${p.id}" value="${p.satuan}">
+      <div class="aktif-row">
+        <input type="checkbox" id="aktif-${p.id}" ${p.aktif === true || p.aktif === "TRUE" ? "checked" : ""}>
+        <label style="margin:0;">Tampilkan ke pembeli</label>
+      </div>
+      <div class="save-row">
+        <button onclick="simpanProduk('${p.id}', '${p.nama.replace(/'/g, "\\'")}')">Simpan perubahan</button>
+      </div>
+    `;
+    daftar.appendChild(div);
+  });
+}
+
+async function simpanProduk(id, nama) {
+  const harga = document.getElementById(`harga-${id}`).value;
+  const stok = document.getElementById(`stok-${id}`).value;
+  const satuan = document.getElementById(`satuan-${id}`).value;
+  const aktif = document.getElementById(`aktif-${id}`).checked;
+
+  const res = await fetch(API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain" },
+    body: JSON.stringify({ action: "adminEditProduct", password: PASSWORD, id, nama, harga, satuan, stok, aktif })
+  });
+  const data = await res.json();
+
+  if (data.error) {
+    alert(data.error);
+  } else {
+    alert("Tersimpan.");
+  }
+}
+</script>
+
+</body>
+</html>

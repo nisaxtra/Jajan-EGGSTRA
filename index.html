@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EGGSTRA - Pre-Order</title>
+<style>
+  :root {
+    --amber: #b5701a;
+    --amber-light: #fdf3e3;
+    --amber-border: #eecf9a;
+    --text: #3d3226;
+    --text-muted: #7a6f5f;
+    --green: #2f7d4f;
+    --green-light: #e6f4ec;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    background: #faf7f0;
+    color: var(--text);
+    margin: 0;
+    padding: 0 0 60px;
+  }
+  header {
+    background: var(--amber-light);
+    padding: 28px 20px 20px;
+    text-align: center;
+    border-bottom: 1px solid var(--amber-border);
+  }
+  header h1 { margin: 0 0 4px; font-size: 26px; }
+  header p { margin: 0; color: var(--text-muted); font-size: 15px; }
+  main { max-width: 480px; margin: 0 auto; padding: 20px 16px; }
+  .card {
+    background: #fff;
+    border: 1px solid #eee2cf;
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+  .produk-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .produk-nama { font-size: 17px; font-weight: 600; margin: 0 0 2px; }
+  .produk-sub { font-size: 14px; color: var(--text-muted); margin: 0; }
+  .produk-harga { font-size: 16px; font-weight: 600; color: var(--amber); white-space: nowrap; }
+  .qty-box { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+  .qty-box button {
+    width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--amber-border);
+    background: var(--amber-light); font-size: 20px; color: var(--amber); cursor: pointer;
+  }
+  .qty-box input {
+    width: 56px; text-align: center; font-size: 17px; padding: 8px 4px;
+    border: 1px solid #ddd; border-radius: 10px;
+  }
+  .total-card {
+    background: var(--amber);
+    color: #fff;
+    border-radius: 14px;
+    padding: 16px 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 14px;
+  }
+  label { display: block; font-size: 14px; color: var(--text-muted); margin: 12px 0 6px; }
+  input[type=text], input[type=tel] {
+    width: 100%; padding: 12px 14px; font-size: 16px;
+    border: 1px solid #ddd; border-radius: 10px;
+  }
+  .btn-submit {
+    width: 100%; padding: 15px; margin-top: 18px;
+    background: var(--amber); color: #fff; border: none;
+    border-radius: 12px; font-size: 17px; font-weight: 600; cursor: pointer;
+  }
+  .btn-submit:disabled { opacity: 0.5; }
+  .track-link { text-align: center; margin-top: 20px; }
+  .track-link a { color: var(--amber); font-size: 14px; text-decoration: none; font-weight: 600; }
+  .empty { color: var(--text-muted); text-align: center; padding: 20px; }
+  .confirm {
+    background: var(--green-light); border: 1px solid #bfe3cc; border-radius: 14px;
+    padding: 20px; text-align: center;
+  }
+  .confirm h2 { color: var(--green); margin: 0 0 8px; font-size: 20px; }
+  .confirm .order-id { font-size: 22px; font-weight: 700; margin: 10px 0; letter-spacing: 1px; }
+  .confirm p { color: var(--text-muted); font-size: 14px; margin: 4px 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>EGGSTRA</h1>
+  <p>Telur segar langsung dari peternakan</p>
+</header>
+
+<main>
+  <div id="katalog"></div>
+
+  <div id="checkout-section" style="display:none;">
+    <div class="total-card">
+      <span>Total bayar</span>
+      <span id="total-text">Rp 0</span>
+    </div>
+
+    <div class="card">
+      <label for="nama">Nama pemesan</label>
+      <input type="text" id="nama" placeholder="Nama lengkap">
+
+      <label for="hp">Nomor HP / WhatsApp</label>
+      <input type="tel" id="hp" placeholder="08xxxxxxxxxx">
+
+      <label style="display:flex;align-items:center;gap:8px;margin-top:14px;font-size:15px;color:var(--text);cursor:pointer;">
+        <input type="checkbox" id="konfirmasiWa" style="width:20px;height:20px;" checked>
+        Konfirmasi juga via WhatsApp setelah pesan
+      </label>
+
+      <button class="btn-submit" id="btn-submit" onclick="kirimPesanan()">Kirim pesanan</button>
+    </div>
+  </div>
+
+  <div id="confirm-section" style="display:none;"></div>
+
+  <div class="track-link">
+    <a href="track.html">Sudah pesan? Cek status pesanan di sini</a>
+  </div>
+</main>
+
+<script>
+// ==========================================
+// GANTI dengan URL Web App Apps Script kamu
+const API_URL = "https://script.google.com/macros/s/AKfycbyEi_QC10g-LSxQXcV4X4iZjTvMOu70Tz6BdQ3g9kND1ZohSJz62uCJJ0JVm0aBHB_aTw/exec";
+// Nomor WA penjual, format 62xxxxxxxxxx (tanpa + atau 0 di depan)
+const NOMOR_WA_PENJUAL = "6282118011169";
+// ==========================================
+
+let produkList = [];
+let jumlah = {};
+
+async function muatProduk() {
+  const katalog = document.getElementById("katalog");
+  katalog.innerHTML = '<div class="empty">Memuat produk...</div>';
+  try {
+    const res = await fetch(API_URL + "?action=getProducts");
+    const data = await res.json();
+    produkList = data.produk || [];
+    if (produkList.length === 0) {
+      katalog.innerHTML = '<div class="empty">Belum ada produk tersedia.</div>';
+      return;
+    }
+    katalog.innerHTML = "";
+    produkList.forEach(p => {
+      jumlah[p.id] = 0;
+      const div = document.createElement("div");
+      div.className = "card";
+      div.innerHTML = `
+        <div class="produk-row">
+          <div>
+            <p class="produk-nama">${p.nama}</p>
+            <p class="produk-sub">Stok ${p.stok} ${p.satuan}</p>
+          </div>
+          <div class="produk-harga">Rp ${Number(p.harga).toLocaleString("id-ID")}<br><span style="font-size:12px;color:#7a6f5f;font-weight:400;">/ ${p.satuan}</span></div>
+        </div>
+        <div class="qty-box">
+          <button onclick="ubahJumlah('${p.id}', -1)">-</button>
+          <input type="text" id="qty-${p.id}" value="0" readonly>
+          <button onclick="ubahJumlah('${p.id}', 1)">+</button>
+        </div>
+      `;
+      katalog.appendChild(div);
+    });
+  } catch (err) {
+    katalog.innerHTML = '<div class="empty">Gagal memuat produk. Coba muat ulang halaman.</div>';
+  }
+}
+
+function ubahJumlah(id, delta) {
+  jumlah[id] = Math.max(0, (jumlah[id] || 0) + delta);
+  document.getElementById("qty-" + id).value = jumlah[id];
+  hitungTotal();
+}
+
+function hitungTotal() {
+  let total = 0;
+  let ada = false;
+  produkList.forEach(p => {
+    if (jumlah[p.id] > 0) {
+      total += jumlah[p.id] * Number(p.harga);
+      ada = true;
+    }
+  });
+  document.getElementById("total-text").textContent = "Rp " + total.toLocaleString("id-ID");
+  document.getElementById("checkout-section").style.display = ada ? "block" : "none";
+  return total;
+}
+
+async function kirimPesanan() {
+  const nama = document.getElementById("nama").value.trim();
+  const hp = document.getElementById("hp").value.trim();
+  const total = hitungTotal();
+
+  if (!nama || !hp) {
+    alert("Isi nama dan nomor HP dulu ya.");
+    return;
+  }
+
+  const items = produkList
+    .filter(p => jumlah[p.id] > 0)
+    .map(p => ({ nama: p.nama, jumlah: jumlah[p.id], harga: p.harga }));
+
+  const btn = document.getElementById("btn-submit");
+  btn.disabled = true;
+  btn.textContent = "Mengirim...";
+
+  try {
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify({ action: "placeOrder", nama, hp, items, total })
+    });
+    const data = await res.json();
+
+    if (data.ok) {
+      document.getElementById("katalog").style.display = "none";
+      document.getElementById("checkout-section").style.display = "none";
+      document.getElementById("confirm-section").style.display = "block";
+
+      const pakaiWa = document.getElementById("konfirmasiWa").checked;
+
+      document.getElementById("confirm-section").innerHTML = `
+        <div class="confirm">
+          <h2>Pesanan diterima</h2>
+          <p>Simpan nomor ini untuk cek status pesananmu</p>
+          <div class="order-id">${data.id}</div>
+          <p>Silakan transfer sesuai total, lalu cek status pembayaran secara berkala di halaman lacak pesanan.</p>
+          ${pakaiWa ? '<p>Kamu akan diarahkan ke WhatsApp untuk mengirim rincian pesanan...</p>' : ''}
+        </div>
+      `;
+
+      if (pakaiWa) {
+        const rincian = items.map(i =>
+          `- ${i.nama} x${i.jumlah} = Rp ${Number(i.harga * i.jumlah).toLocaleString("id-ID")}`
+        ).join("%0A");
+
+        const pesan =
+          `Halo EGGSTRA, saya baru saja pesan lewat website%0A%0A` +
+          `*Nomor pesanan:* ${data.id}%0A` +
+          `*Nama:* ${nama}%0A%0A` +
+          `*Rincian:*%0A${rincian}%0A%0A` +
+          `*Total:* Rp ${Number(total).toLocaleString("id-ID")}%0A%0A` +
+          `Saya akan segera kirim bukti transfer ya kak!`;
+
+        setTimeout(() => {
+          window.location.href = `https://wa.me/${NOMOR_WA_PENJUAL}?text=${pesan}`;
+        }, 1200);
+      }
+    } else {
+      alert("Gagal mengirim pesanan: " + (data.error || "coba lagi."));
+      btn.disabled = false;
+      btn.textContent = "Kirim pesanan";
+    }
+  } catch (err) {
+    alert("Gagal mengirim pesanan. Periksa koneksi internet.");
+    btn.disabled = false;
+    btn.textContent = "Kirim pesanan";
+  }
+}
+
+muatProduk();
+</script>
+
+</body>
+</html>
