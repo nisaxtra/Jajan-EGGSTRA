@@ -1,272 +1,575 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EGGSTRA - Pre-Order</title>
-<style>
-  :root {
-    --amber: #b5701a;
-    --amber-light: #fdf3e3;
-    --amber-border: #eecf9a;
-    --text: #3d3226;
-    --text-muted: #7a6f5f;
-    --green: #2f7d4f;
-    --green-light: #e6f4ec;
-  }
-  * { box-sizing: border-box; }
-  body {
-    font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-    background: #faf7f0;
-    color: var(--text);
-    margin: 0;
-    padding: 0 0 60px;
-  }
-  header {
-    background: var(--amber-light);
-    padding: 28px 20px 20px;
-    text-align: center;
-    border-bottom: 1px solid var(--amber-border);
-  }
-  header h1 { margin: 0 0 4px; font-size: 26px; }
-  header p { margin: 0; color: var(--text-muted); font-size: 15px; }
-  main { max-width: 480px; margin: 0 auto; padding: 20px 16px; }
-  .card {
-    background: #fff;
-    border: 1px solid #eee2cf;
-    border-radius: 14px;
-    padding: 16px;
-    margin-bottom: 14px;
-  }
-  .produk-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-  .produk-nama { font-size: 17px; font-weight: 600; margin: 0 0 2px; }
-  .produk-sub { font-size: 14px; color: var(--text-muted); margin: 0; }
-  .produk-harga { font-size: 16px; font-weight: 600; color: var(--amber); white-space: nowrap; }
-  .qty-box { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
-  .qty-box button {
-    width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--amber-border);
-    background: var(--amber-light); font-size: 20px; color: var(--amber); cursor: pointer;
-  }
-  .qty-box input {
-    width: 56px; text-align: center; font-size: 17px; padding: 8px 4px;
-    border: 1px solid #ddd; border-radius: 10px;
-  }
-  .total-card {
-    background: var(--amber);
-    color: #fff;
-    border-radius: 14px;
-    padding: 16px 18px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 18px;
-    font-weight: 600;
-    margin-bottom: 14px;
-  }
-  label { display: block; font-size: 14px; color: var(--text-muted); margin: 12px 0 6px; }
-  input[type=text], input[type=tel] {
-    width: 100%; padding: 12px 14px; font-size: 16px;
-    border: 1px solid #ddd; border-radius: 10px;
-  }
-  .btn-submit {
-    width: 100%; padding: 15px; margin-top: 18px;
-    background: var(--amber); color: #fff; border: none;
-    border-radius: 12px; font-size: 17px; font-weight: 600; cursor: pointer;
-  }
-  .btn-submit:disabled { opacity: 0.5; }
-  .track-link { text-align: center; margin-top: 20px; }
-  .track-link a { color: var(--amber); font-size: 14px; text-decoration: none; font-weight: 600; }
-  .empty { color: var(--text-muted); text-align: center; padding: 20px; }
-  .confirm {
-    background: var(--green-light); border: 1px solid #bfe3cc; border-radius: 14px;
-    padding: 20px; text-align: center;
-  }
-  .confirm h2 { color: var(--green); margin: 0 0 8px; font-size: 20px; }
-  .confirm .order-id { font-size: 22px; font-weight: 700; margin: 10px 0; letter-spacing: 1px; }
-  .confirm p { color: var(--text-muted); font-size: 14px; margin: 4px 0; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EGGSTRA - Store & Pre-Order</title>
+    <style>
+        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 0; }
+        body { background-color: #faf7f0; color: #3d3226; padding: 20px 12px; display: flex; justify-content: center; }
+        .container { background: #ffffff; max-width: 480px; width: 100%; padding: 24px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #eee2cf; }
+
+        .header { text-align: center; margin-bottom: 20px; position: relative; }
+        h2 { color: #b5701a; font-size: 1.6em; font-weight: 700; margin-bottom: 4px; }
+        p.subtitle { font-size: 0.88em; color: #7a6f5f; }
+
+        .admin-toggle { position: absolute; right: 0; top: 0; font-size: 0.8em; color: #b5701a; text-decoration: none; cursor: pointer; font-weight: 600; padding: 4px 8px; background: #fdf3e3; border-radius: 8px; }
+
+        .form-group { margin-bottom: 16px; }
+        label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.88em; color: #3d3226; }
+        input, select, textarea { width: 100%; padding: 11px 13px; border: 1px solid #ddd; border-radius: 10px; font-size: 0.95em; outline: none; background: #fff; }
+        input:focus, select:focus, textarea:focus { border-color: #b5701a; }
+        textarea { resize: vertical; min-height: 70px; }
+
+        .item-box { background: #fff; border: 1px solid #eee2cf; padding: 14px; border-radius: 12px; margin-bottom: 12px; display: flex; gap: 12px; align-items: center; }
+        .item-img { width: 65px; height: 65px; border-radius: 8px; object-fit: cover; background: #f8fafc; border: 1px solid #eee; flex-shrink: 0; }
+        .item-info { flex: 1; }
+        .item-title { font-weight: 700; font-size: 0.95em; color: #3d3226; margin-bottom: 2px; }
+        .item-price { font-size: 0.85em; color: #b5701a; font-weight: bold; margin-bottom: 6px; }
+        .qty-control { display: flex; align-items: center; gap: 8px; }
+        .qty-btn { width: 32px; height: 32px; border-radius: 8px; border: 1px solid #eecf9a; background: #fdf3e3; font-size: 16px; color: #b5701a; font-weight: bold; cursor: pointer; }
+        .qty-input { width: 50px; text-align: center; padding: 5px; font-weight: 600; border-radius: 8px; }
+
+        .qris-box { display: none; text-align: center; background: #fffbe3; border: 2px dashed #f59e0b; padding: 15px; border-radius: 10px; margin: 12px 0; }
+        .qris-box img { max-width: 200px; width: 100%; border-radius: 8px; margin: 10px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .qris-limit-note { display: none; font-size: 0.8em; color: #dc2626; background-color: #fef2f2; border: 1px solid #fecaca; padding: 8px 12px; border-radius: 8px; margin-top: 6px; }
+
+        .summary-box { background: #fdf3e3; border: 1px solid #eecf9a; padding: 16px; border-radius: 12px; margin: 20px 0 16px; }
+        .summary-row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.88em; }
+        .summary-row.total { font-size: 1.1em; font-weight: bold; color: #b5701a; border-top: 1px dashed #eecf9a; padding-top: 8px; margin-top: 8px; margin-bottom: 0; }
+
+        button.btn-submit { width: 100%; background-color: #b5701a; color: white; border: none; padding: 14px; font-size: 1em; font-weight: bold; border-radius: 10px; cursor: pointer; transition: background 0.2s; }
+        button.btn-submit:hover { background-color: #965a13; }
+        button.btn-submit:disabled { background-color: #ccc; cursor: not-allowed; }
+        .btn-secondary { background: #fff; color: #b5701a; border: 1px solid #b5701a; }
+
+        .loading-text { text-align: center; color: #7a6f5f; padding: 20px; font-size: 0.9em; }
+
+        #adminView { display: none; }
+        .admin-card { background: #fff; border: 1px solid #eee2cf; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+        .admin-card h3 { font-size: 1em; color: #b5701a; margin-bottom: 12px; }
+        .row2 { display: flex; gap: 8px; }
+        .row2 > div { flex: 1; }
+
+        /* ===== PERIODE PO ===== */
+        .periode-banner { border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; }
+        .periode-buka { background: #e6f4ec; border: 1px solid #bfe3cc; }
+        .periode-tutup { background: #fdecc8; border: 1px solid #f3d391; }
+        .periode-banner .judul { font-weight: 700; font-size: 0.95em; margin-bottom: 3px; }
+        .periode-buka .judul { color: #2f7d4f; }
+        .periode-tutup .judul { color: #8a5a00; }
+        .periode-banner .ket { font-size: 0.85em; color: #5c5346; }
+        .toggle-periode { display: flex; align-items: center; gap: 10px; margin: 10px 0; }
+        .toggle-periode button { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #ddd; background: #fff; font-weight: 600; cursor: pointer; font-size: 0.9em; }
+        .toggle-periode button.active-buka { background: #2f7d4f; color: #fff; border-color: #2f7d4f; }
+        .toggle-periode button.active-tutup { background: #b5701a; color: #fff; border-color: #b5701a; }
+        #formLockedNote { display: none; text-align: center; color: #8a5a00; background: #fdecc8; border: 1px solid #f3d391; border-radius: 10px; padding: 14px; font-size: 0.9em; margin-top: 10px; }
+    </style>
 </head>
 <body>
 
-<header>
-  <h1>EGGSTRA</h1>
-  <p>Telur segar langsung dari peternakan</p>
-</header>
+<div class="container">
 
-<main>
-  <div id="katalog"></div>
+    <div id="storeView">
+        <div class="header">
+            <span class="admin-toggle" onclick="showAdminLogin()">🔑 Admin</span>
+            <h2>🥚 EGGSTRA Store</h2>
+            <p class="subtitle">Sistem PO: Pilih Produk → Isi Alamat → Transfer</p>
+        </div>
 
-  <div id="checkout-section" style="display:none;">
-    <div class="total-card">
-      <span>Total bayar</span>
-      <span id="total-text">Rp 0</span>
+        <div id="periodeBanner"></div>
+
+        <form id="poForm" onsubmit="kirimPesanan(event)">
+
+            <div class="form-group">
+                <label for="nama">Nama Pemesan:</label>
+                <input type="text" id="nama" required placeholder="Contoh: Budi">
+            </div>
+
+            <div class="form-group">
+                <label for="alamat">Alamat Lengkap Pengiriman:</label>
+                <textarea id="alamat" required placeholder="Masukkan jalan, RT/RW, kelurahan, dan patokan rumah..."></textarea>
+            </div>
+
+            <label>Pilih Produk:</label>
+            <div id="produkListContainer">
+                <div class="loading-text">Memuat daftar produk...</div>
+            </div>
+
+            <div class="form-group">
+                <label for="pembayaran">Pilih Metode Pembayaran:</label>
+                <select id="pembayaran" onchange="cekMetodeBayar()" required>
+                    <option value="QRIS" id="optQris">QRIS (Maksimal s.d. Rp 490.000)</option>
+                    <option value="BCA">Transfer Bank BCA</option>
+                    <option value="CIMB">Transfer Bank CIMB Niaga</option>
+                    <option value="CASH">Cash / Tunai saat Ambil</option>
+                </select>
+                <div id="qrisNote" class="qris-limit-note">
+                    ⚠️ QRIS hanya berlaku untuk nominal di bawah Rp 500.000. Untuk transaksi Rp 500.000+, silakan pilih Transfer Bank.
+                </div>
+            </div>
+
+            <div id="boxQris" class="qris-box">
+                <p style="font-size: 0.85em; font-weight: bold; color: #b45309;">Silakan Scan QRIS di bawah ini:</p>
+                <img id="imgQris" src="https://lh3.googleusercontent.com/d/1Z0yNrHOWHkVAdnxV-TuYPPsdmeLZIIBg" alt="Kode QRIS EGGSTRA">
+                <p style="font-size: 0.75em; color: #666;">Bisa pakai GoPay, OVO, Dana, ShopeePay, BCA Mobile, dll.</p>
+            </div>
+
+            <div class="summary-box">
+                <div id="summaryItems">
+                    <div style="font-size: 0.85em; color: #7a6f5f;">Belum ada produk dipilih</div>
+                </div>
+                <div class="summary-row total">
+                    <span>Total Bayar:</span>
+                    <span id="labelTotal">Rp 0</span>
+                </div>
+            </div>
+
+            <button type="submit" id="btnSubmit" class="btn-submit">Kirim Pesanan via WhatsApp 🚀</button>
+            <div id="formLockedNote">PO sedang tutup, form pemesanan tidak aktif untuk saat ini.</div>
+        </form>
     </div>
 
-    <div class="card">
-      <label for="nama">Nama pemesan</label>
-      <input type="text" id="nama" placeholder="Nama lengkap">
 
-      <label for="hp">Nomor HP / WhatsApp</label>
-      <input type="tel" id="hp" placeholder="08xxxxxxxxxx">
+    <div id="adminView">
+        <div class="header">
+            <span class="admin-toggle" onclick="showStore()">🛒 Kembali ke Toko</span>
+            <h2>🔑 Admin Panel</h2>
+            <p class="subtitle">Kelola Produk, Stok & Periode PO</p>
+        </div>
 
-      <label style="display:flex;align-items:center;gap:8px;margin-top:14px;font-size:15px;color:var(--text);cursor:pointer;">
-        <input type="checkbox" id="konfirmasiWa" style="width:20px;height:20px;" checked>
-        Konfirmasi juga via WhatsApp setelah pesan
-      </label>
+        <div id="adminLoginCard" class="admin-card">
+            <label for="adminPassword">Kata Sandi Admin:</label>
+            <input type="password" id="adminPassword" placeholder="Masukkan password">
+            <button class="btn-submit" style="margin-top: 10px;" onclick="loginAdmin()">Masuk</button>
+        </div>
 
-      <button class="btn-submit" id="btn-submit" onclick="kirimPesanan()">Kirim pesanan</button>
+        <div id="adminDashboardCard" style="display: none;">
+
+            <div class="admin-card">
+                <h3>Periode PO</h3>
+                <div class="toggle-periode">
+                    <button type="button" id="btnBukaPeriode" onclick="setStatusPeriode('Buka')">Buka PO</button>
+                    <button type="button" id="btnTutupPeriode" onclick="setStatusPeriode('Tutup')">Tutup PO</button>
+                </div>
+                <div class="form-group">
+                    <label>Nama Periode:</label>
+                    <input type="text" id="periodeNama" placeholder="Contoh: PO Batch Agustus #3">
+                </div>
+                <div class="row2">
+                    <div>
+                        <label>Tanggal Tutup Rencana:</label>
+                        <input type="text" id="periodeTanggalTutup" placeholder="Contoh: 15 Agustus 2026">
+                    </div>
+                    <div>
+                        <label>Estimasi Kirim:</label>
+                        <input type="text" id="periodeTanggalKirim" placeholder="Contoh: 18 Agustus 2026">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Catatan untuk pembeli:</label>
+                    <textarea id="periodeCatatan" placeholder="Contoh: PO berikutnya buka lagi minggu depan"></textarea>
+                </div>
+                <button class="btn-submit" onclick="simpanPeriode()">Simpan Periode</button>
+            </div>
+
+            <div class="admin-card">
+                <h3>Tambah Produk Baru</h3>
+                <div class="form-group">
+                    <label>Nama Produk:</label>
+                    <input type="text" id="newNama" placeholder="Contoh: Daging Ayam / Telur Puyuh">
+                </div>
+                <div class="row2">
+                    <div>
+                        <label>Harga (Rp):</label>
+                        <input type="number" id="newHarga" placeholder="25000">
+                    </div>
+                    <div>
+                        <label>Satuan:</label>
+                        <input type="text" id="newSatuan" placeholder="kg / pcs / pack">
+                    </div>
+                </div>
+                <div class="row2" style="margin-top: 8px;">
+                    <div>
+                        <label>Stok Initial:</label>
+                        <input type="number" id="newStok" placeholder="10">
+                    </div>
+                    <div>
+                        <label>URL Gambar (Opsional):</label>
+                        <input type="text" id="newGambar" placeholder="https://...">
+                    </div>
+                </div>
+                <button class="btn-submit" style="margin-top: 12px;" onclick="tambahProdukAdmin()">Simpan Produk Baru</button>
+            </div>
+
+            <div class="admin-card">
+                <h3>Daftar Produk Saat Ini</h3>
+                <div id="adminProdukList"><div class="loading-text">Memuat...</div></div>
+                <button class="btn-submit btn-secondary" style="margin-top: 10px;" onclick="loadAdminProduk()">Refresh Produk</button>
+            </div>
+
+        </div>
     </div>
-  </div>
 
-  <div id="confirm-section" style="display:none;"></div>
-
-  <div class="track-link">
-    <a href="track.html">Sudah pesan? Cek status pesanan di sini</a>
-  </div>
-</main>
+</div>
 
 <script>
-// ==========================================
-// GANTI dengan URL Web App Apps Script kamu
-const API_URL = "https://script.google.com/macros/s/AKfycbyEi_QC10g-LSxQXcV4X4iZjTvMOu70Tz6BdQ3g9kND1ZohSJz62uCJJ0JVm0aBHB_aTw/exec";
-// Nomor WA penjual, format 62xxxxxxxxxx (tanpa + atau 0 di depan)
-const NOMOR_WA_PENJUAL = "6282118011169";
-// ==========================================
+    const NOMOR_WA_PENJUAL = "6282118011169";
+    const REK_BCA = "1234567890 a.n. Nisa";
+    const REK_CIMB = "9876543210 a.n. Nisa";
 
-let produkList = [];
-let jumlah = {};
+    const GOOGLE_SCRIPT_URL = "TEMPEL_URL_WEB_APP_DI_SINI";
 
-async function muatProduk() {
-  const katalog = document.getElementById("katalog");
-  katalog.innerHTML = '<div class="empty">Memuat produk...</div>';
-  try {
-    const res = await fetch(API_URL + "?action=getProducts");
-    const data = await res.json();
-    produkList = data.produk || [];
-    if (produkList.length === 0) {
-      katalog.innerHTML = '<div class="empty">Belum ada produk tersedia.</div>';
-      return;
+    let listProduk = [];
+    let qtyState = {};
+    let currentAdminPassword = "";
+    let statusPeriodeSaatIni = "Buka";
+    let periodeAdminPilihan = "Buka";
+
+    function formatRupiah(angka) {
+        return 'Rp ' + Number(angka).toLocaleString('id-ID');
     }
-    katalog.innerHTML = "";
-    produkList.forEach(p => {
-      jumlah[p.id] = 0;
-      const div = document.createElement("div");
-      div.className = "card";
-      div.innerHTML = `
-        <div class="produk-row">
-          <div>
-            <p class="produk-nama">${p.nama}</p>
-            <p class="produk-sub">Stok ${p.stok} ${p.satuan}</p>
-          </div>
-          <div class="produk-harga">Rp ${Number(p.harga).toLocaleString("id-ID")}<br><span style="font-size:12px;color:#7a6f5f;font-weight:400;">/ ${p.satuan}</span></div>
-        </div>
-        <div class="qty-box">
-          <button onclick="ubahJumlah('${p.id}', -1)">-</button>
-          <input type="text" id="qty-${p.id}" value="0" readonly>
-          <button onclick="ubahJumlah('${p.id}', 1)">+</button>
-        </div>
-      `;
-      katalog.appendChild(div);
-    });
-  } catch (err) {
-    katalog.innerHTML = '<div class="empty">Gagal memuat produk. Coba muat ulang halaman.</div>';
-  }
-}
 
-function ubahJumlah(id, delta) {
-  jumlah[id] = Math.max(0, (jumlah[id] || 0) + delta);
-  document.getElementById("qty-" + id).value = jumlah[id];
-  hitungTotal();
-}
-
-function hitungTotal() {
-  let total = 0;
-  let ada = false;
-  produkList.forEach(p => {
-    if (jumlah[p.id] > 0) {
-      total += jumlah[p.id] * Number(p.harga);
-      ada = true;
+    function showAdminLogin() {
+        document.getElementById('storeView').style.display = 'none';
+        document.getElementById('adminView').style.display = 'block';
     }
-  });
-  document.getElementById("total-text").textContent = "Rp " + total.toLocaleString("id-ID");
-  document.getElementById("checkout-section").style.display = ada ? "block" : "none";
-  return total;
-}
 
-async function kirimPesanan() {
-  const nama = document.getElementById("nama").value.trim();
-  const hp = document.getElementById("hp").value.trim();
-  const total = hitungTotal();
+    function showStore() {
+        document.getElementById('adminView').style.display = 'none';
+        document.getElementById('storeView').style.display = 'block';
+    }
 
-  if (!nama || !hp) {
-    alert("Isi nama dan nomor HP dulu ya.");
-    return;
-  }
+    // --- CEK STATUS PERIODE PO ---
+    async function loadStatusPeriode() {
+        try {
+            const res = await fetch(GOOGLE_SCRIPT_URL + "?action=getStatusPO");
+            const data = await res.json();
+            statusPeriodeSaatIni = data.status || "Buka";
 
-  const items = produkList
-    .filter(p => jumlah[p.id] > 0)
-    .map(p => ({ nama: p.nama, jumlah: jumlah[p.id], harga: p.harga }));
+            const banner = document.getElementById('periodeBanner');
+            const btn = document.getElementById('btnSubmit');
+            const lockedNote = document.getElementById('formLockedNote');
 
-  const btn = document.getElementById("btn-submit");
-  btn.disabled = true;
-  btn.textContent = "Mengirim...";
+            if (statusPeriodeSaatIni === "Tutup") {
+                banner.innerHTML = `
+                    <div class="periode-banner periode-tutup">
+                        <div class="judul">PO sedang tutup</div>
+                        <div class="ket">${data.catatan || 'PO akan dibuka kembali segera.'}${data.tanggalKirim ? ' Estimasi kirim periode sebelumnya: ' + data.tanggalKirim + '.' : ''}</div>
+                    </div>
+                `;
+                btn.disabled = true;
+                lockedNote.style.display = 'block';
+            } else {
+                banner.innerHTML = `
+                    <div class="periode-banner periode-buka">
+                        <div class="judul">${data.namaPeriode || 'PO sedang buka'}</div>
+                        <div class="ket">${data.tanggalTutup ? 'Ditutup sekitar ' + data.tanggalTutup + '.' : ''} ${data.tanggalKirim ? 'Estimasi kirim ' + data.tanggalKirim + '.' : ''}</div>
+                    </div>
+                `;
+                btn.disabled = false;
+                lockedNote.style.display = 'none';
+            }
+        } catch (err) {
+            // kalau gagal cek status, biarkan form tetap bisa dipakai
+        }
+    }
 
-  try {
-    const res = await fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain" },
-      body: JSON.stringify({ action: "placeOrder", nama, hp, items, total })
-    });
-    const data = await res.json();
+    async function loadProdukStore() {
+        const container = document.getElementById('produkListContainer');
+        try {
+            const res = await fetch(GOOGLE_SCRIPT_URL + "?action=getProducts");
+            const data = await res.json();
+            listProduk = data.produk || [];
 
-    if (data.ok) {
-      document.getElementById("katalog").style.display = "none";
-      document.getElementById("checkout-section").style.display = "none";
-      document.getElementById("confirm-section").style.display = "block";
+            if(listProduk.length === 0) {
+                container.innerHTML = '<div class="loading-text">Belum ada produk dijual.</div>';
+                return;
+            }
 
-      const pakaiWa = document.getElementById("konfirmasiWa").checked;
+            container.innerHTML = "";
+            listProduk.forEach(p => {
+                qtyState[p.id] = 0;
+                const imgUrl = p.gambar || "https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?w=150&auto=format&fit=crop&q=60";
 
-      document.getElementById("confirm-section").innerHTML = `
-        <div class="confirm">
-          <h2>Pesanan diterima</h2>
-          <p>Simpan nomor ini untuk cek status pesananmu</p>
-          <div class="order-id">${data.id}</div>
-          <p>Silakan transfer sesuai total, lalu cek status pembayaran secara berkala di halaman lacak pesanan.</p>
-          ${pakaiWa ? '<p>Kamu akan diarahkan ke WhatsApp untuk mengirim rincian pesanan...</p>' : ''}
-        </div>
-      `;
+                const div = document.createElement("div");
+                div.className = "item-box";
+                div.innerHTML = `
+                    <img src="${imgUrl}" class="item-img" alt="${p.nama}">
+                    <div class="item-info">
+                        <div class="item-title">${p.nama}</div>
+                        <div class="item-price">${formatRupiah(p.harga)} / ${p.satuan}</div>
+                        <div class="qty-control">
+                            <button type="button" class="qty-btn" onclick="updateQty('${p.id}', -0.5)">-</button>
+                            <input type="text" class="qty-input" id="qty-${p.id}" value="0" readonly>
+                            <button type="button" class="qty-btn" onclick="updateQty('${p.id}', 0.5)">+</button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+            hitungTotal();
+        } catch(err) {
+            container.innerHTML = '<div class="loading-text">Gagal memuat produk. Coba refresh.</div>';
+        }
+    }
 
-      if (pakaiWa) {
-        const rincian = items.map(i =>
-          `- ${i.nama} x${i.jumlah} = Rp ${Number(i.harga * i.jumlah).toLocaleString("id-ID")}`
-        ).join("%0A");
+    function updateQty(id, delta) {
+        qtyState[id] = Math.max(0, (qtyState[id] || 0) + delta);
+        document.getElementById(`qty-${id}`).value = qtyState[id];
+        hitungTotal();
+    }
 
-        const pesan =
-          `Halo EGGSTRA, saya baru saja pesan lewat website%0A%0A` +
-          `*Nomor pesanan:* ${data.id}%0A` +
-          `*Nama:* ${nama}%0A%0A` +
-          `*Rincian:*%0A${rincian}%0A%0A` +
-          `*Total:* Rp ${Number(total).toLocaleString("id-ID")}%0A%0A` +
-          `Saya akan segera kirim bukti transfer ya kak!`;
+    function hitungTotal() {
+        let total = 0;
+        const summaryContainer = document.getElementById('summaryItems');
+        summaryContainer.innerHTML = "";
+        let adaItem = false;
+
+        listProduk.forEach(p => {
+            const qty = qtyState[p.id] || 0;
+            if(qty > 0) {
+                adaItem = true;
+                const subtotal = qty * Number(p.harga);
+                total += subtotal;
+
+                const row = document.createElement("div");
+                row.className = "summary-row";
+                row.innerHTML = `<span>${p.nama} (${qty} ${p.satuan}):</span> <span>${formatRupiah(subtotal)}</span>`;
+                summaryContainer.appendChild(row);
+            }
+        });
+
+        if(!adaItem) {
+            summaryContainer.innerHTML = '<div style="font-size: 0.85em; color: #7a6f5f;">Belum ada produk dipilih</div>';
+        }
+
+        document.getElementById('labelTotal').innerText = formatRupiah(total);
+
+        const optQris = document.getElementById('optQris');
+        const selectPembayaran = document.getElementById('pembayaran');
+        const qrisNote = document.getElementById('qrisNote');
+
+        if (total >= 500000) {
+            optQris.disabled = true;
+            qrisNote.style.display = 'block';
+            if (selectPembayaran.value === 'QRIS') {
+                selectPembayaran.value = 'BCA';
+                cekMetodeBayar();
+            }
+        } else {
+            optQris.disabled = false;
+            qrisNote.style.display = 'none';
+        }
+    }
+
+    function cekMetodeBayar() {
+        const pembayaran = document.getElementById('pembayaran').value;
+        const boxQris = document.getElementById('boxQris');
+        boxQris.style.display = (pembayaran === 'QRIS') ? 'block' : 'none';
+    }
+
+    function kirimPesanan(event) {
+        event.preventDefault();
+
+        if (statusPeriodeSaatIni === "Tutup") {
+            alert("PO sedang tutup, belum bisa menerima pesanan baru saat ini.");
+            return;
+        }
+
+        const btn = document.getElementById('btnSubmit');
+        const nama = document.getElementById('nama').value.trim();
+        const alamat = document.getElementById('alamat').value.trim();
+        const pembayaran = document.getElementById('pembayaran').value;
+
+        const itemsPilihan = listProduk.filter(p => (qtyState[p.id] || 0) > 0);
+        if(itemsPilihan.length === 0) {
+            alert('Silakan pilih minimal 1 produk.');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerText = "Mengirim...";
+
+        let total = 0;
+        let rincianPesananText = "";
+
+        itemsPilihan.forEach(p => {
+            const qty = qtyState[p.id];
+            const subtotal = qty * Number(p.harga);
+            total += subtotal;
+            rincianPesananText += `• ${p.nama}: ${qty} ${p.satuan} = ${formatRupiah(subtotal)}%0A`;
+        });
+
+        const payload = JSON.stringify({
+            action: "placeOrder",
+            nama: nama,
+            alamat: alamat,
+            items: itemsPilihan.map(p => ({ nama: p.nama, jumlah: qtyState[p.id], harga: p.harga })),
+            total: total,
+            pembayaran: pembayaran
+        });
+
+        fetch(GOOGLE_SCRIPT_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: payload
+        });
+
+        let infoBayar = '';
+        if (pembayaran === 'QRIS') {
+            infoBayar = `*Metode Pembayaran:* QRIS%0A📱 Status: Sudah scan QRIS di web, berikut bukti pembayarannya!`;
+        } else if (pembayaran === 'BCA') {
+            infoBayar = `*Metode Pembayaran:* Transfer BCA%0A💳 Rekening: *${REK_BCA}*%0A%0ASaya akan segera kirim bukti transfer ya kak!`;
+        } else if (pembayaran === 'CIMB') {
+            infoBayar = `*Metode Pembayaran:* Transfer CIMB Niaga%0A💳 Rekening: *${REK_CIMB}*%0A%0ASaya akan segera kirim bukti transfer ya kak!`;
+        } else {
+            infoBayar = `*Metode Pembayaran:* CASH / Tunai%0A💵 Pembayaran dilakukan saat pengambilan/pengiriman.`;
+        }
+
+        const pesan = `Halo EGGSTRA, saya mau ikut PO %0A%0A` +
+                      `*Data Pemesan:*%0A` +
+                      `• Nama: ${nama}%0A` +
+                      `• Alamat: ${alamat}%0A%0A` +
+                      `*Rincian Pesanan:*%0A${rincianPesananText}%0A` +
+                      `*Total Bayar:* *${formatRupiah(total)}*%0A%0A` +
+                      `${infoBayar}`;
+
+        window.location.href = `https://wa.me/${NOMOR_WA_PENJUAL}?text=${pesan}`;
 
         setTimeout(() => {
-          window.location.href = `https://wa.me/${NOMOR_WA_PENJUAL}?text=${pesan}`;
-        }, 1200);
-      }
-    } else {
-      alert("Gagal mengirim pesanan: " + (data.error || "coba lagi."));
-      btn.disabled = false;
-      btn.textContent = "Kirim pesanan";
+            btn.disabled = false;
+            btn.innerText = "Kirim Pesanan via WhatsApp 🚀";
+        }, 4000);
     }
-  } catch (err) {
-    alert("Gagal mengirim pesanan. Periksa koneksi internet.");
-    btn.disabled = false;
-    btn.textContent = "Kirim pesanan";
-  }
-}
 
-muatProduk();
+    // ============================================================
+    // ADMIN
+    // ============================================================
+    async function loginAdmin() {
+        const pw = document.getElementById('adminPassword').value;
+        if(!pw) { alert("Masukkan password admin!"); return; }
+
+        currentAdminPassword = pw;
+        document.getElementById('adminLoginCard').style.display = 'none';
+        document.getElementById('adminDashboardCard').style.display = 'block';
+        loadAdminProduk();
+        loadPeriodeAdmin();
+    }
+
+    async function loadPeriodeAdmin() {
+        const res = await fetch(GOOGLE_SCRIPT_URL, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain" },
+            body: JSON.stringify({ action: "adminGetPeriode", password: currentAdminPassword })
+        });
+        const data = await res.json();
+        if (data.error) { alert(data.error); return; }
+
+        periodeAdminPilihan = data.status || "Buka";
+        document.getElementById('periodeNama').value = data.namaPeriode || "";
+        document.getElementById('periodeTanggalTutup').value = data.tanggalTutup || "";
+        document.getElementById('periodeTanggalKirim').value = data.tanggalKirim || "";
+        document.getElementById('periodeCatatan').value = data.catatan || "";
+        tandaiTombolPeriode();
+    }
+
+    function setStatusPeriode(status) {
+        periodeAdminPilihan = status;
+        tandaiTombolPeriode();
+    }
+
+    function tandaiTombolPeriode() {
+        document.getElementById('btnBukaPeriode').classList.toggle('active-buka', periodeAdminPilihan === 'Buka');
+        document.getElementById('btnTutupPeriode').classList.toggle('active-tutup', periodeAdminPilihan === 'Tutup');
+    }
+
+    async function simpanPeriode() {
+        const namaPeriode = document.getElementById('periodeNama').value.trim();
+        const tanggalTutup = document.getElementById('periodeTanggalTutup').value.trim();
+        const tanggalKirim = document.getElementById('periodeTanggalKirim').value.trim();
+        const catatan = document.getElementById('periodeCatatan').value.trim();
+
+        const res = await fetch(GOOGLE_SCRIPT_URL, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain" },
+            body: JSON.stringify({
+                action: "adminSetPeriode",
+                password: currentAdminPassword,
+                status: periodeAdminPilihan,
+                namaPeriode, tanggalTutup, tanggalKirim, catatan
+            })
+        });
+        const data = await res.json();
+        if (data.ok) {
+            alert("Periode PO tersimpan.");
+        } else {
+            alert(data.error || "Gagal menyimpan periode.");
+        }
+    }
+
+    async function loadAdminProduk() {
+        const container = document.getElementById('adminProdukList');
+        container.innerHTML = '<div class="loading-text">Memuat produk admin...</div>';
+
+        const res = await fetch(https://script.google.com/macros/s/AKfycbwsy6wvmHloh3GPDMMPxH2XAaWZ0gM_44vp7GSXosIfRSraCHR4jHbgysHpLU97LrbQ/exec, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain" },
+            body: JSON.stringify({ action: "adminGetProducts", password: currentAdminPassword })
+        });
+        const data = await res.json();
+
+        if(data.error) {
+            alert(data.error);
+            document.getElementById('adminLoginCard').style.display = 'block';
+            document.getElementById('adminDashboardCard').style.display = 'none';
+            return;
+        }
+
+        container.innerHTML = "";
+        data.produk.forEach(p => {
+            const div = document.createElement("div");
+            div.style.borderBottom = "1px solid #eee";
+            div.style.padding = "10px 0";
+            div.innerHTML = `
+                <div style="font-weight:bold;">${p.nama} (${p.satuan})</div>
+                <div style="font-size:0.85em; color:#7a6f5f;">Harga: ${formatRupiah(p.harga)} | Stok: ${p.stok}</div>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    async function tambahProdukAdmin() {
+        const nama = document.getElementById('newNama').value;
+        const harga = document.getElementById('newHarga').value;
+        const satuan = document.getElementById('newSatuan').value;
+        const stok = document.getElementById('newStok').value;
+        const gambar = document.getElementById('newGambar').value;
+
+        if(!nama || !harga || !satuan) { alert("Isi nama, harga, dan satuan dulu."); return; }
+
+        const res = await fetch(GOOGLE_SCRIPT_URL, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain" },
+            body: JSON.stringify({ action: "adminAddProduct", password: currentAdminPassword, nama, harga, satuan, stok: stok||0, gambar })
+        });
+        const data = await res.json();
+
+        if(data.ok) {
+            alert("Produk berhasil ditambahkan!");
+            document.getElementById('newNama').value = "";
+            document.getElementById('newHarga').value = "";
+            document.getElementById('newSatuan').value = "";
+            document.getElementById('newStok').value = "";
+            document.getElementById('newGambar').value = "";
+            loadAdminProduk();
+            loadProdukStore();
+        }
+    }
+
+    // Jalankan Awal
+    loadStatusPeriode();
+    loadProdukStore();
 </script>
-
 </body>
 </html>
