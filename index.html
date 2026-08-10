@@ -51,7 +51,6 @@
         .row2 { display: flex; gap: 8px; }
         .row2 > div { flex: 1; }
 
-        /* ===== PERIODE PO ===== */
         .periode-banner { border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; }
         .periode-buka { background: #e6f4ec; border: 1px solid #bfe3cc; }
         .periode-tutup { background: #fdecc8; border: 1px solid #f3d391; }
@@ -139,8 +138,10 @@
         </div>
 
         <div id="adminLoginCard" class="admin-card">
-            <label for="adminPassword">Kata Sandi Admin:</label>
-            <input type="password" id="adminPassword" placeholder="Masukkan password">
+            <div class="form-group">
+                <label for="adminPassword">Kata Sandi Admin:</label>
+                <input type="password" id="adminPassword" placeholder="Masukkan password">
+            </div>
             <button class="btn-submit" style="margin-top: 10px;" onclick="loginAdmin()">Masuk</button>
         </div>
 
@@ -166,7 +167,7 @@
                         <input type="text" id="periodeTanggalKirim" placeholder="Contoh: 18 Agustus 2026">
                     </div>
                 </div>
-                <div class="form-group">
+                <div class="form-group" style="margin-top: 8px;">
                     <label>Catatan untuk pembeli:</label>
                     <textarea id="periodeCatatan" placeholder="Contoh: PO berikutnya buka lagi minggu depan"></textarea>
                 </div>
@@ -218,13 +219,23 @@
     const REK_BCA = "1234567890 a.n. Nisa";
     const REK_CIMB = "9876543210 a.n. Nisa";
 
-    const GOOGLE_SCRIPT_URL = "TEMPEL_URL_WEB_APP_DI_SINI";
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwsy6wvmHloh3GPDMMPxH2XAaWZ0gM_44vp7GSXosIfRSraCHR4jHbgysHpLU97LrbQ/exec";
 
     let listProduk = [];
     let qtyState = {};
     let currentAdminPassword = "";
     let statusPeriodeSaatIni = "Buka";
     let periodeAdminPilihan = "Buka";
+
+    // Helper untuk hindari CORS error pada Google Apps Script POST
+    async function apiPost(payload) {
+        const res = await fetch(GOOGLE_SCRIPT_URL, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify(payload)
+        });
+        return await res.json();
+    }
 
     function formatRupiah(angka) {
         return 'Rp ' + Number(angka).toLocaleString('id-ID');
@@ -271,7 +282,7 @@
                 lockedNote.style.display = 'none';
             }
         } catch (err) {
-            // kalau gagal cek status, biarkan form tetap bisa dipakai
+            console.error("Gagal load status:", err);
         }
     }
 
@@ -283,7 +294,7 @@
             listProduk = data.produk || [];
 
             if(listProduk.length === 0) {
-                container.innerHTML = '<div class="loading-text">Belum ada produk dijual.</div>';
+                container.innerHTML = '<div class="loading-text">Belum ada produk dijual. Tambahkan lewat Admin Panel.</div>';
                 return;
             }
 
@@ -310,7 +321,7 @@
             });
             hitungTotal();
         } catch(err) {
-            container.innerHTML = '<div class="loading-text">Gagal memuat produk. Coba refresh.</div>';
+            container.innerHTML = '<div class="loading-text">Gagal memuat produk. Coba refresh halaman.</div>';
         }
     }
 
@@ -369,7 +380,7 @@
         boxQris.style.display = (pembayaran === 'QRIS') ? 'block' : 'none';
     }
 
-    function kirimPesanan(event) {
+    async function kirimPesanan(event) {
         event.preventDefault();
 
         if (statusPeriodeSaatIni === "Tutup") {
@@ -401,20 +412,18 @@
             rincianPesananText += `• ${p.nama}: ${qty} ${p.satuan} = ${formatRupiah(subtotal)}%0A`;
         });
 
-        const payload = JSON.stringify({
-            action: "placeOrder",
-            nama: nama,
-            alamat: alamat,
-            items: itemsPilihan.map(p => ({ nama: p.nama, jumlah: qtyState[p.id], harga: p.harga })),
-            total: total,
-            pembayaran: pembayaran
-        });
-
-        fetch(GOOGLE_SCRIPT_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain' },
-            body: payload
-        });
+        try {
+            await apiPost({
+                action: "placeOrder",
+                nama: nama,
+                alamat: alamat,
+                items: itemsPilihan.map(p => ({ nama: p.nama, jumlah: qtyState[p.id], harga: p.harga })),
+                total: total,
+                pembayaran: pembayaran
+            });
+        } catch(e) {
+            console.error("Gagal simpan ke sheet, lanjut ke WA");
+        }
 
         let infoBayar = '';
         if (pembayaran === 'QRIS') {
@@ -444,34 +453,42 @@
     }
 
     // ============================================================
-    // ADMIN
+    // ADMIN PANEL FUNCTIONS
     // ============================================================
     async function loginAdmin() {
         const pw = document.getElementById('adminPassword').value;
         if(!pw) { alert("Masukkan password admin!"); return; }
 
         currentAdminPassword = pw;
+        
+        // Tes verifikasi password
+        const data = await apiPost({ action: "adminGetPeriode", password: currentAdminPassword });
+        if (data.error) {
+            alert(data.error);
+            return;
+        }
+
         document.getElementById('adminLoginCard').style.display = 'none';
         document.getElementById('adminDashboardCard').style.display = 'block';
+        
+        // Load data admin
         loadAdminProduk();
-        loadPeriodeAdmin();
+        loadPeriodeAdminData(data);
     }
 
-    async function loadPeriodeAdmin() {
-        const res = await fetch(GOOGLE_SCRIPT_URL, {
-            method: "POST",
-            headers: { "Content-Type": "text/plain" },
-            body: JSON.stringify({ action: "adminGetPeriode", password: currentAdminPassword })
-        });
-        const data = await res.json();
-        if (data.error) { alert(data.error); return; }
-
+    function loadPeriodeAdminData(data) {
         periodeAdminPilihan = data.status || "Buka";
         document.getElementById('periodeNama').value = data.namaPeriode || "";
         document.getElementById('periodeTanggalTutup').value = data.tanggalTutup || "";
         document.getElementById('periodeTanggalKirim').value = data.tanggalKirim || "";
         document.getElementById('periodeCatatan').value = data.catatan || "";
         tandaiTombolPeriode();
+    }
+
+    async function loadPeriodeAdmin() {
+        const data = await apiPost({ action: "adminGetPeriode", password: currentAdminPassword });
+        if (data.error) { alert(data.error); return; }
+        loadPeriodeAdminData(data);
     }
 
     function setStatusPeriode(status) {
@@ -490,19 +507,16 @@
         const tanggalKirim = document.getElementById('periodeTanggalKirim').value.trim();
         const catatan = document.getElementById('periodeCatatan').value.trim();
 
-        const res = await fetch(GOOGLE_SCRIPT_URL, {
-            method: "POST",
-            headers: { "Content-Type": "text/plain" },
-            body: JSON.stringify({
-                action: "adminSetPeriode",
-                password: currentAdminPassword,
-                status: periodeAdminPilihan,
-                namaPeriode, tanggalTutup, tanggalKirim, catatan
-            })
+        const data = await apiPost({
+            action: "adminSetPeriode",
+            password: currentAdminPassword,
+            status: periodeAdminPilihan,
+            namaPeriode, tanggalTutup, tanggalKirim, catatan
         });
-        const data = await res.json();
+
         if (data.ok) {
             alert("Periode PO tersimpan.");
+            loadStatusPeriode();
         } else {
             alert(data.error || "Gagal menyimpan periode.");
         }
@@ -512,17 +526,17 @@
         const container = document.getElementById('adminProdukList');
         container.innerHTML = '<div class="loading-text">Memuat produk admin...</div>';
 
-        const res = await fetch(https://script.google.com/macros/s/AKfycbwsy6wvmHloh3GPDMMPxH2XAaWZ0gM_44vp7GSXosIfRSraCHR4jHbgysHpLU97LrbQ/exec, {
-            method: "POST",
-            headers: { "Content-Type": "text/plain" },
-            body: JSON.stringify({ action: "adminGetProducts", password: currentAdminPassword })
-        });
-        const data = await res.json();
+        const data = await apiPost({ action: "adminGetProducts", password: currentAdminPassword });
 
         if(data.error) {
             alert(data.error);
             document.getElementById('adminLoginCard').style.display = 'block';
             document.getElementById('adminDashboardCard').style.display = 'none';
+            return;
+        }
+
+        if(!data.produk || data.produk.length === 0) {
+            container.innerHTML = '<div class="loading-text">Belum ada produk. Tambahkan produk di atas.</div>';
             return;
         }
 
@@ -533,7 +547,7 @@
             div.style.padding = "10px 0";
             div.innerHTML = `
                 <div style="font-weight:bold;">${p.nama} (${p.satuan})</div>
-                <div style="font-size:0.85em; color:#7a6f5f;">Harga: ${formatRupiah(p.harga)} | Stok: ${p.stok}</div>
+                <div style="font-size:0.85em; color:#7a6f5f;">Harga: ${formatRupiah(p.harga)} | Stok: ${p.stok} | Status: ${p.aktif ? 'Aktif' : 'Nonaktif'}</div>
             `;
             container.appendChild(div);
         });
@@ -548,12 +562,11 @@
 
         if(!nama || !harga || !satuan) { alert("Isi nama, harga, dan satuan dulu."); return; }
 
-        const res = await fetch(GOOGLE_SCRIPT_URL, {
-            method: "POST",
-            headers: { "Content-Type": "text/plain" },
-            body: JSON.stringify({ action: "adminAddProduct", password: currentAdminPassword, nama, harga, satuan, stok: stok||0, gambar })
+        const data = await apiPost({
+            action: "adminAddProduct",
+            password: currentAdminPassword,
+            nama, harga, satuan, stok: stok||0, gambar
         });
-        const data = await res.json();
 
         if(data.ok) {
             alert("Produk berhasil ditambahkan!");
@@ -564,6 +577,8 @@
             document.getElementById('newGambar').value = "";
             loadAdminProduk();
             loadProdukStore();
+        } else {
+            alert(data.error || "Gagal menambah produk");
         }
     }
 
