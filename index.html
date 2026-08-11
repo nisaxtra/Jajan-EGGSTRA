@@ -42,6 +42,8 @@
         button.btn-submit:hover { background-color: #965a13; }
         button.btn-submit:disabled { background-color: #ccc; cursor: not-allowed; }
         .btn-secondary { background: #fff; color: #b5701a; border: 1px solid #b5701a; }
+        .btn-delete { background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; padding: 6px 12px; border-radius: 6px; font-size: 0.8em; font-weight: bold; cursor: pointer; }
+        .btn-delete:hover { background: #fca5a5; }
 
         .loading-text { text-align: center; color: #7a6f5f; padding: 20px; font-size: 0.9em; }
 
@@ -63,6 +65,7 @@
         .toggle-periode button.active-buka { background: #2f7d4f; color: #fff; border-color: #2f7d4f; }
         .toggle-periode button.active-tutup { background: #b5701a; color: #fff; border-color: #b5701a; }
         #formLockedNote { display: none; text-align: center; color: #8a5a00; background: #fdecc8; border: 1px solid #f3d391; border-radius: 10px; padding: 14px; font-size: 0.9em; margin-top: 10px; }
+        .admin-prod-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding: 10px 0; }
     </style>
 </head>
 <body>
@@ -227,7 +230,6 @@
     let statusPeriodeSaatIni = "Buka";
     let periodeAdminPilihan = "Buka";
 
-    // Helper untuk hindari CORS error pada Google Apps Script POST
     async function apiPost(payload) {
         const res = await fetch(GOOGLE_SCRIPT_URL, {
             method: "POST",
@@ -251,7 +253,6 @@
         document.getElementById('storeView').style.display = 'block';
     }
 
-    // --- CEK STATUS PERIODE PO ---
     async function loadStatusPeriode() {
         try {
             const res = await fetch(GOOGLE_SCRIPT_URL + "?action=getStatusPO");
@@ -461,7 +462,6 @@
 
         currentAdminPassword = pw;
         
-        // Tes verifikasi password
         const data = await apiPost({ action: "adminGetPeriode", password: currentAdminPassword });
         if (data.error) {
             alert(data.error);
@@ -471,7 +471,6 @@
         document.getElementById('adminLoginCard').style.display = 'none';
         document.getElementById('adminDashboardCard').style.display = 'block';
         
-        // Load data admin
         loadAdminProduk();
         loadPeriodeAdminData(data);
     }
@@ -483,12 +482,6 @@
         document.getElementById('periodeTanggalKirim').value = data.tanggalKirim || "";
         document.getElementById('periodeCatatan').value = data.catatan || "";
         tandaiTombolPeriode();
-    }
-
-    async function loadPeriodeAdmin() {
-        const data = await apiPost({ action: "adminGetPeriode", password: currentAdminPassword });
-        if (data.error) { alert(data.error); return; }
-        loadPeriodeAdminData(data);
     }
 
     function setStatusPeriode(status) {
@@ -543,11 +536,13 @@
         container.innerHTML = "";
         data.produk.forEach(p => {
             const div = document.createElement("div");
-            div.style.borderBottom = "1px solid #eee";
-            div.style.padding = "10px 0";
+            div.className = "admin-prod-item";
             div.innerHTML = `
-                <div style="font-weight:bold;">${p.nama} (${p.satuan})</div>
-                <div style="font-size:0.85em; color:#7a6f5f;">Harga: ${formatRupiah(p.harga)} | Stok: ${p.stok} | Status: ${p.aktif ? 'Aktif' : 'Nonaktif'}</div>
+                <div>
+                    <div style="font-weight:bold;">${p.nama} (${p.satuan})</div>
+                    <div style="font-size:0.85em; color:#7a6f5f;">Harga: ${formatRupiah(p.harga)} | Stok: ${p.stok}</div>
+                </div>
+                <button class="btn-delete" onclick="hapusProdukAdmin('${p.id}', '${p.nama}')">Hapus</button>
             `;
             container.appendChild(div);
         });
@@ -579,6 +574,24 @@
             loadProdukStore();
         } else {
             alert(data.error || "Gagal menambah produk");
+        }
+    }
+
+    async function hapusProdukAdmin(id, nama) {
+        if (!confirm(`Apakah Anda yakin ingin menghapus produk "${nama}"?`)) return;
+
+        const data = await apiPost({
+            action: "adminDeleteProduct",
+            password: currentAdminPassword,
+            id: id
+        });
+
+        if (data.ok) {
+            alert(`Produk "${nama}" berhasil dihapus.`);
+            loadAdminProduk();
+            loadProdukStore();
+        } else {
+            alert(data.error || "Gagal menghapus produk");
         }
     }
 
