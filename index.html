@@ -199,11 +199,11 @@
                         <input type="number" id="newStok" placeholder="10">
                     </div>
                     <div>
-                        <label>URL Gambar (Opsional):</label>
-                        <input type="text" id="newGambar" placeholder="https://...">
+                        <label>Upload Foto Produk (Opsional):</label>
+                        <input type="file" id="newFileGambar" accept="image/*">
                     </div>
                 </div>
-                <button class="btn-submit" style="margin-top: 12px;" onclick="tambahProdukAdmin()">Simpan Produk Baru</button>
+                <button class="btn-submit" id="btnTambahProduk" style="margin-top: 12px;" onclick="tambahProdukAdmin(event)">Simpan Produk Baru</button>
             </div>
 
             <div class="admin-card">
@@ -548,20 +548,42 @@
         });
     }
 
-    async function tambahProdukAdmin() {
+    async function tambahProdukAdmin(event) {
         const nama = document.getElementById('newNama').value;
         const harga = document.getElementById('newHarga').value;
         const satuan = document.getElementById('newSatuan').value;
         const stok = document.getElementById('newStok').value;
-        const gambar = document.getElementById('newGambar').value;
+        const fileInput = document.getElementById('newFileGambar');
 
         if(!nama || !harga || !satuan) { alert("Isi nama, harga, dan satuan dulu."); return; }
+
+        const btn = document.getElementById('btnTambahProduk');
+        btn.disabled = true;
+        btn.innerText = "Mengunggah & Menyimpan...";
+
+        let fileData = "";
+        let fileName = "";
+
+        if (fileInput.files.length > 0) {
+            const file = fileInput.files[0];
+            fileName = file.name;
+            fileData = await new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.readAsDataURL(file);
+            });
+        }
 
         const data = await apiPost({
             action: "adminAddProduct",
             password: currentAdminPassword,
-            nama, harga, satuan, stok: stok||0, gambar
+            nama, harga, satuan, stok: stok||0,
+            fileData: fileData,
+            fileName: fileName
         });
+
+        btn.disabled = false;
+        btn.innerText = "Simpan Produk Baru";
 
         if(data.ok) {
             alert("Produk berhasil ditambahkan!");
@@ -569,7 +591,7 @@
             document.getElementById('newHarga').value = "";
             document.getElementById('newSatuan').value = "";
             document.getElementById('newStok').value = "";
-            document.getElementById('newGambar').value = "";
+            document.getElementById('newFileGambar').value = "";
             loadAdminProduk();
             loadProdukStore();
         } else {
