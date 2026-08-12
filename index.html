@@ -22,10 +22,13 @@
         textarea { resize: vertical; min-height: 70px; }
 
         .item-box { background: #fff; border: 1px solid #eee2cf; padding: 14px; border-radius: 12px; margin-bottom: 12px; display: flex; gap: 12px; align-items: center; }
-        .item-img { width: 65px; height: 65px; border-radius: 8px; object-fit: cover; background: #f8fafc; border: 1px solid #eee; flex-shrink: 0; }
+        .item-img { width: 70px; height: 70px; border-radius: 8px; object-fit: cover; background: #f8fafc; border: 1px solid #eee; flex-shrink: 0; }
         .item-info { flex: 1; }
         .item-title { font-weight: 700; font-size: 0.95em; color: #3d3226; margin-bottom: 2px; }
         .item-price { font-size: 0.85em; color: #b5701a; font-weight: bold; margin-bottom: 6px; }
+        
+        .variasi-select { width: 100%; padding: 6px 8px; border-radius: 6px; font-size: 0.82em; margin-bottom: 8px; border: 1px solid #eecf9a; background: #fdfaf5; color: #3d3226; font-weight: 600; }
+
         .qty-control { display: flex; align-items: center; gap: 8px; }
         .qty-btn { width: 32px; height: 32px; border-radius: 8px; border: 1px solid #eecf9a; background: #fdf3e3; font-size: 16px; color: #b5701a; font-weight: bold; cursor: pointer; }
         .qty-input { width: 50px; text-align: center; padding: 5px; font-weight: 600; border-radius: 8px; }
@@ -181,27 +184,31 @@
                 <h3>Tambah Produk Baru</h3>
                 <div class="form-group">
                     <label>Nama Produk:</label>
-                    <input type="text" id="newNama" placeholder="Contoh: Daging Ayam / Telur Puyuh">
+                    <input type="text" id="newNama" placeholder="Contoh: Telur Omega / Ayam Potong">
                 </div>
                 <div class="row2">
                     <div>
-                        <label>Harga (Rp):</label>
-                        <input type="number" id="newHarga" placeholder="25000">
+                        <label>Harga Ukuran Besar (Rp):</label>
+                        <input type="number" id="newHargaBesar" placeholder="28000">
                     </div>
                     <div>
-                        <label>Satuan:</label>
-                        <input type="text" id="newSatuan" placeholder="kg / pcs / pack">
+                        <label>Harga Ukuran Kecil (Rp):</label>
+                        <input type="number" id="newHargaKecil" placeholder="26000 (0 jika tidak ada)">
                     </div>
                 </div>
                 <div class="row2" style="margin-top: 8px;">
                     <div>
+                        <label>Satuan:</label>
+                        <input type="text" id="newSatuan" placeholder="kg / pcs / pack">
+                    </div>
+                    <div>
                         <label>Stok Initial:</label>
                         <input type="number" id="newStok" placeholder="10">
                     </div>
-                    <div>
-                        <label>Upload Foto Produk (Opsional):</label>
-                        <input type="file" id="newFileGambar" accept="image/*">
-                    </div>
+                </div>
+                <div class="form-group" style="margin-top: 8px;">
+                    <label>Upload Foto Produk (Opsional):</label>
+                    <input type="file" id="newFileGambar" accept="image/*">
                 </div>
                 <button class="btn-submit" id="btnTambahProduk" style="margin-top: 12px;" onclick="tambahProdukAdmin(event)">Simpan Produk Baru</button>
             </div>
@@ -226,6 +233,7 @@
 
     let listProduk = [];
     let qtyState = {};
+    let variasiPilihanState = {}; // Menyimpan variasi pilihan user ('Besar' atau 'Kecil')
     let currentAdminPassword = "";
     let statusPeriodeSaatIni = "Buka";
     let periodeAdminPilihan = "Buka";
@@ -287,7 +295,6 @@
         }
     }
 
-    // Fungsi Pengompres Gambar ke Base64 (Kecil & Sangat Ringan)
     function compressImageToBase64(file) {
         return new Promise((resolve) => {
             const reader = new FileReader();
@@ -297,7 +304,7 @@
                 img.src = event.target.result;
                 img.onload = () => {
                     const canvas = document.createElement("canvas");
-                    const maxDim = 200; // Ukuran thumbnail super pas 200x200px
+                    const maxDim = 200;
                     let width = img.width;
                     let height = img.height;
 
@@ -317,8 +324,6 @@
                     canvas.height = height;
                     const ctx = canvas.getContext("2d");
                     ctx.drawImage(img, 0, 0, width, height);
-
-                    // Kompresi Kualitas JPEG 50%
                     resolve(canvas.toDataURL("image/jpeg", 0.5));
                 };
             };
@@ -340,11 +345,24 @@
             container.innerHTML = "";
             listProduk.forEach(p => {
                 qtyState[p.id] = 0;
+                variasiPilihanState[p.id] = "Besar"; // Default Pilihan "Besar"
                 
-                // Cek ketersediaan gambar spesifik
                 let imgUrl = p.gambar;
                 if (!imgUrl || imgUrl.trim() === "" || imgUrl.length < 10) {
                     imgUrl = "https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?w=150&auto=format&fit=crop&q=60";
+                }
+
+                // Cek ketersediaan variasi kecil
+                const adaVariasiKecil = p.hargaKecil && Number(p.hargaKecil) > 0;
+                let htmlVariasi = '';
+
+                if (adaVariasiKecil) {
+                    htmlVariasi = `
+                        <select class="variasi-select" id="var-${p.id}" onchange="gantiVariasi('${p.id}')">
+                            <option value="Besar">Ukuran Besar - ${formatRupiah(p.hargaBesar)}</option>
+                            <option value="Kecil">Ukuran Kecil - ${formatRupiah(p.hargaKecil)}</option>
+                        </select>
+                    `;
                 }
 
                 const div = document.createElement("div");
@@ -353,7 +371,8 @@
                     <img src="${imgUrl}" class="item-img" alt="${p.nama}">
                     <div class="item-info">
                         <div class="item-title">${p.nama}</div>
-                        <div class="item-price">${formatRupiah(p.harga)} / ${p.satuan}</div>
+                        <div class="item-price" id="price-label-${p.id}">${formatRupiah(p.hargaBesar)} / ${p.satuan}</div>
+                        ${htmlVariasi}
                         <div class="qty-control">
                             <button type="button" class="qty-btn" onclick="updateQty('${p.id}', -0.5)">-</button>
                             <input type="text" class="qty-input" id="qty-${p.id}" value="0" readonly>
@@ -367,6 +386,19 @@
         } catch(err) {
             container.innerHTML = '<div class="loading-text">Gagal memuat produk. Coba refresh halaman.</div>';
         }
+    }
+
+    function gantiVariasi(id) {
+        const select = document.getElementById(`var-${id}`);
+        variasiPilihanState[id] = select.value;
+        
+        // Update label harga di tampilan
+        const p = listProduk.find(item => item.id === id);
+        if (p) {
+            const harga = select.value === "Kecil" ? p.hargaKecil : p.hargaBesar;
+            document.getElementById(`price-label-${id}`).innerText = `${formatRupiah(harga)} / ${p.satuan}`;
+        }
+        hitungTotal();
     }
 
     function updateQty(id, delta) {
@@ -385,12 +417,16 @@
             const qty = qtyState[p.id] || 0;
             if(qty > 0) {
                 adaItem = true;
-                const subtotal = qty * Number(p.harga);
+                const pilihan = variasiPilihanState[p.id] || "Besar";
+                const hargaDua = (pilihan === "Kecil" && p.hargaKecil > 0) ? Number(p.hargaKecil) : Number(p.hargaBesar);
+                const subtotal = qty * hargaDua;
                 total += subtotal;
+
+                const labelPilihan = (p.hargaKecil > 0) ? ` (${pilihan})` : '';
 
                 const row = document.createElement("div");
                 row.className = "summary-row";
-                row.innerHTML = `<span>${p.nama} (${qty} ${p.satuan}):</span> <span>${formatRupiah(subtotal)}</span>`;
+                row.innerHTML = `<span>${p.nama}${labelPilihan} (${qty} ${p.satuan}):</span> <span>${formatRupiah(subtotal)}</span>`;
                 summaryContainer.appendChild(row);
             }
         });
@@ -448,12 +484,19 @@
 
         let total = 0;
         let rincianPesananText = "";
+        let itemsForSheet = [];
 
         itemsPilihan.forEach(p => {
             const qty = qtyState[p.id];
-            const subtotal = qty * Number(p.harga);
+            const pilihan = variasiPilihanState[p.id] || "Besar";
+            const hargaFixed = (pilihan === "Kecil" && p.hargaKecil > 0) ? Number(p.hargaKecil) : Number(p.hargaBesar);
+            const subtotal = qty * hargaFixed;
             total += subtotal;
-            rincianPesananText += `• ${p.nama}: ${qty} ${p.satuan} = ${formatRupiah(subtotal)}%0A`;
+
+            const namaFull = (p.hargaKecil > 0) ? `${p.nama} (${pilihan})` : p.nama;
+            rincianPesananText += `• ${namaFull}: ${qty} ${p.satuan} = ${formatRupiah(subtotal)}%0A`;
+
+            itemsForSheet.push({ nama: namaFull, jumlah: qty, harga: hargaFixed });
         });
 
         try {
@@ -461,7 +504,7 @@
                 action: "placeOrder",
                 nama: nama,
                 alamat: alamat,
-                items: itemsPilihan.map(p => ({ nama: p.nama, jumlah: qtyState[p.id], harga: p.harga })),
+                items: itemsForSheet,
                 total: total,
                 pembayaran: pembayaran
             });
@@ -578,12 +621,13 @@
 
         container.innerHTML = "";
         data.produk.forEach(p => {
+            const infoHargaKecil = p.hargaKecil > 0 ? ` | Kecil: ${formatRupiah(p.hargaKecil)}` : '';
             const div = document.createElement("div");
             div.className = "admin-prod-item";
             div.innerHTML = `
                 <div>
                     <div style="font-weight:bold;">${p.nama} (${p.satuan})</div>
-                    <div style="font-size:0.85em; color:#7a6f5f;">Harga: ${formatRupiah(p.harga)} | Stok: ${p.stok}</div>
+                    <div style="font-size:0.85em; color:#7a6f5f;">Besar: ${formatRupiah(p.hargaBesar)}${infoHargaKecil} | Stok: ${p.stok}</div>
                 </div>
                 <button class="btn-delete" onclick="hapusProdukAdmin('${p.id}', '${p.nama}')">Hapus</button>
             `;
@@ -594,12 +638,13 @@
     async function tambahProdukAdmin(event) {
         event.preventDefault();
         const nama = document.getElementById('newNama').value.trim();
-        const harga = document.getElementById('newHarga').value;
+        const hargaBesar = document.getElementById('newHargaBesar').value;
+        const hargaKecil = document.getElementById('newHargaKecil').value;
         const satuan = document.getElementById('newSatuan').value.trim();
         const stok = document.getElementById('newStok').value;
         const fileInput = document.getElementById('newFileGambar');
 
-        if(!nama || !harga || !satuan) { alert("Isi nama, harga, dan satuan dulu."); return; }
+        if(!nama || !hargaBesar || !satuan) { alert("Isi nama, harga besar, dan satuan dulu."); return; }
 
         const btn = document.getElementById('btnTambahProduk');
         btn.disabled = true;
@@ -617,7 +662,8 @@
             action: "adminAddProduct",
             password: currentAdminPassword,
             nama: nama,
-            harga: harga,
+            hargaBesar: hargaBesar,
+            hargaKecil: hargaKecil || 0,
             satuan: satuan,
             stok: stok || 0,
             gambar: base64Gambar
@@ -629,7 +675,8 @@
         if(data.ok) {
             alert("Produk berhasil ditambahkan!");
             document.getElementById('newNama').value = "";
-            document.getElementById('newHarga').value = "";
+            document.getElementById('newHargaBesar').value = "";
+            document.getElementById('newHargaKecil').value = "";
             document.getElementById('newSatuan').value = "";
             document.getElementById('newStok').value = "";
             document.getElementById('newFileGambar').value = "";
